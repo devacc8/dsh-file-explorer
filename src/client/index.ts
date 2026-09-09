@@ -132,7 +132,12 @@ html[data-fe-panel-open] [data-phase=active] {
   --fe-tone-shell: #4a9a3c;
   --fe-tone-script: #3a72c9;
   --fe-tone-image: #3f9a68;
+  --fe-tone-git: #c9512e;
+  --fe-tone-lock: #8f8f8f;
+  --fe-tone-license: #a08020;
+  --fe-tone-docker: #2b7bb9;
   --fe-tone-default: var(--dsw-alias-label-tertiary);
+  --fe-guide: rgba(0,0,0,.07);
 }
 body[data-ds-dark-theme] .fe-overlay-root {
   --fe-tone-dir: #8b98a5;
@@ -145,6 +150,11 @@ body[data-ds-dark-theme] .fe-overlay-root {
   --fe-tone-shell: #98c379;
   --fe-tone-script: #61afef;
   --fe-tone-image: #7ec98f;
+  --fe-tone-git: #e0714a;
+  --fe-tone-lock: #9aa0a6;
+  --fe-tone-license: #d4b04a;
+  --fe-tone-docker: #4aa3e0;
+  --fe-guide: rgba(255,255,255,.09);
 }
 .fe-tone-dir { color: var(--fe-tone-dir); }
 .fe-tone-md { color: var(--fe-tone-md); }
@@ -156,9 +166,14 @@ body[data-ds-dark-theme] .fe-overlay-root {
 .fe-tone-shell { color: var(--fe-tone-shell); }
 .fe-tone-script { color: var(--fe-tone-script); }
 .fe-tone-image { color: var(--fe-tone-image); }
+.fe-tone-git { color: var(--fe-tone-git); }
+.fe-tone-lock { color: var(--fe-tone-lock); }
+.fe-tone-license { color: var(--fe-tone-license); }
+.fe-tone-docker { color: var(--fe-tone-docker); }
 .fe-tone-default { color: var(--fe-tone-default); }
 .fe-tree { flex: 1; overflow: auto; padding: 4px 0 10px; user-select: none; }
 .fe-row {
+  position: relative;
   display: flex; align-items: center; gap: 5px;
   padding: 3px 8px; margin: 0 4px;
   border-radius: 6px; cursor: pointer; white-space: nowrap;
@@ -170,6 +185,14 @@ body[data-ds-dark-theme] .fe-overlay-root {
   background: var(--dsw-alias-bg-layer-2);
   color: var(--dsw-alias-label-primary);
   box-shadow: inset 2px 0 0 var(--dsw-alias-state-business-primary);
+}
+/* Indent guides: one hairline per ancestor level, drawn only across the row's
+   left padding (--fe-depth is set per row). */
+.fe-row::before {
+  content: ''; position: absolute; left: 6px; top: 0; bottom: 0;
+  width: calc(var(--fe-depth, 0) * 14px);
+  background-image: repeating-linear-gradient(to right, var(--fe-guide) 0 1px, transparent 1px 14px);
+  pointer-events: none;
 }
 .fe-chevron {
   width: 14px; height: 14px; flex: none;
@@ -374,6 +397,7 @@ body[data-ds-dark-theme] .fe-overlay-root {
 			previewOpen: false,
 			previewRestoreOnTreeOpen: false,
 			status: null,
+			sort: 'name',
 			listeners: new Set(),
 		};
 		const emit = () => { for (const fn of Array.from(store.listeners)) fn() };
@@ -390,6 +414,7 @@ body[data-ds-dark-theme] .fe-overlay-root {
 		};
 		const toggleOpen = () => setOpen(!store.open);
 		const setStatus = (value) => { store.status = value; emit() };
+		const setSort = (value) => { store.sort = value; emit() };
 		let statusSeq = 0;
 		const showStatus = (msg) => {
 			const seq = ++statusSeq;
@@ -915,6 +940,11 @@ body[data-ds-dark-theme] .fe-overlay-root {
 			file: 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z',
 			md: 'M6 2h8l4 4v16H6V2zm6 7l-3 3h2v4h2v-4h2l-3-3z',
 			image: 'M4 5h16v14H4V5zM9 8a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 1 0 0-3.2zM6.4 17l4-5 2.8 3.6 1.6-1.7 3 3.1H6.4z',
+			git: 'M6 3h2v18H6zM7 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM8 12h5a4 4 0 0 0 4-4V6h2v2a6 6 0 0 1-6 6H8zM17 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+			lock: 'M7 10V8a5 5 0 0 1 10 0v2h-2V8a3 3 0 0 0-6 0v2H7zM5 10h14v11H5z',
+			license: 'M12 2a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm0 3.2l1.4 2.9 3.2.5-2.3 2.2.5 3.2L12 12.5 9.2 14l.5-3.2L7.4 8.6l3.2-.5L12 5.2zM9.6 16.4l-1.1 5.6 3.5-1.8 3.5 1.8-1.1-5.6-1.2.9v2.9l-1.2-.6-1.2.6v-2.9l-1.2-.9z',
+			docker: 'M4 9h3v3H4zM8 9h3v3H8zM12 9h3v3h-3zM8 5h3v3H8zM12 5h3v3h-3zM16 9h3v3h-3zM3 13h18v1.5c0 3.6-2.9 6.5-6.5 6.5h-5C5.9 21 3 18.1 3 14.5V13z',
+			sort: 'M3 6h14v2H3zM3 11h9v2H3zM3 16h5v2H3z',
 			files: 'M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z',
 		};
 		const Icon = (props) => react.createElement('svg', {
@@ -924,8 +954,17 @@ body[data-ds-dark-theme] .fe-overlay-root {
 			fill: 'currentColor',
 			style: { display: 'block' },
 		}, react.createElement('path', { d: iconPaths[props.name], fillRule: props.fillRule }));
+		// Whole-name families win over the extension (package-lock.json is a
+		// lock file, not "just json"; .gitignore is not "gitignore-extension").
+		const FILE_NAMES = [
+			{ tone: 'git', icon: 'git', names: ['.gitignore', '.gitattributes', '.gitmodules', '.dockerignore', '.npmignore'] },
+			{ tone: 'lock', icon: 'lock', names: ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lockb', 'cargo.lock', 'gemfile.lock', 'poetry.lock', 'composer.lock'] },
+			{ tone: 'docker', icon: 'docker', names: ['dockerfile', 'docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml'] },
+			{ tone: 'license', icon: 'license', fillRule: 'evenodd', names: ['license', 'license.md', 'license.txt', 'copying', 'notice'] },
+		];
 		// VS Code-style file families: one tone per type (CSS fe-tone-*) plus a
-		// distinct glyph for markdown and images.
+		// distinct glyph for markdown, images, git, lock files, licenses and
+		// Docker files.
 		const FILE_TYPES = [
 			{ tone: 'md', icon: 'md', fillRule: 'evenodd', exts: ['md', 'markdown', 'mdx', 'mdown', 'mkd'] },
 			{ tone: 'code', exts: ['js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'mts', 'cts'] },
@@ -937,8 +976,39 @@ body[data-ds-dark-theme] .fe-overlay-root {
 			{ tone: 'script', exts: ['py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'cc', 'h', 'hpp', 'cs', 'php', 'lua', 'swift', 'kt'] },
 			{ tone: 'image', icon: 'image', fillRule: 'evenodd', exts: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'avif'] },
 		];
+		// Sort modes for the tree: folders always stay first, the mode orders
+		// within each group. `date` needs mtime, which the host supplies.
+		const SORT_MODES = ['name', 'name-desc', 'size', 'date'];
+		const sortTitle = (key) => key === 'size' ? 'Sort: size (largest first)'
+			: key === 'date' ? 'Sort: date (newest first)'
+				: key === 'name-desc' ? 'Sort: name (Z to A)'
+					: 'Sort: name (A to Z)';
+		const nextSort = (key) => SORT_MODES[(Math.max(0, SORT_MODES.indexOf(key)) + 1) % SORT_MODES.length];
+		const sortEntries = (entries, key) => {
+			const mode = key || 'name';
+			return entries.slice().sort((a, b) => {
+				const aDir = a.type === 'directory';
+				const bDir = b.type === 'directory';
+				if (aDir !== bDir) return aDir ? -1 : 1;
+				if (mode === 'size') {
+					const as = typeof a.size === 'number' ? a.size : -1;
+					const bs = typeof b.size === 'number' ? b.size : -1;
+					if (as !== bs) return bs - as;
+				} else if (mode === 'date') {
+					const am = typeof a.mtime === 'number' ? a.mtime : 0;
+					const bm = typeof b.mtime === 'number' ? b.mtime : 0;
+					if (am !== bm) return bm - am;
+				}
+				const cmp = String(a.name).localeCompare(String(b.name), undefined, { numeric: true, sensitivity: 'base' });
+				return mode === 'name-desc' ? -cmp : cmp;
+			});
+		};
 		const fileTypeOf = (name) => {
-			const ext = String(name).toLowerCase().split('.').pop();
+			const lower = String(name).toLowerCase();
+			for (const entry of FILE_NAMES) {
+				if (entry.names.indexOf(lower) !== -1) return { tone: entry.tone, icon: entry.icon, fillRule: entry.fillRule };
+			}
+			const ext = lower.split('.').pop();
 			for (const type of FILE_TYPES) {
 				if (type.exts.indexOf(ext) !== -1) return { tone: type.tone, icon: type.icon || 'file', fillRule: type.fillRule };
 			}
@@ -976,7 +1046,7 @@ body[data-ds-dark-theme] .fe-overlay-root {
 			const children = tree.cache.get(entry.path);
 			const row = react.createElement('div', {
 				className: 'fe-row' + (tree.selected === entry.path ? ' fe-row-selected' : ''),
-				style: { paddingLeft: 6 + props.depth * 14 },
+				style: { paddingLeft: 6 + props.depth * 14, '--fe-depth': props.depth },
 				onClick: () => isDir ? props.onToggle(entry.path) : props.onOpen(entry, true),
 				onDoubleClick: () => props.onOpen(entry, false),
 				title: entry.path,
@@ -993,8 +1063,8 @@ body[data-ds-dark-theme] .fe-overlay-root {
 			const nodes = [row];
 			if (isDir && expanded) {
 				if (children) {
-					for (const child of children) {
-						nodes.push(react.createElement(TreeNode, { key: child.path, entry: child, depth: props.depth + 1, tree, onToggle: props.onToggle, onSelect: props.onSelect, onOpen: props.onOpen }));
+					for (const child of sortEntries(children, props.sort)) {
+						nodes.push(react.createElement(TreeNode, { key: child.path, entry: child, depth: props.depth + 1, tree, sort: props.sort, onToggle: props.onToggle, onSelect: props.onSelect, onOpen: props.onOpen }));
 					}
 				} else if (!loading && error) {
 					nodes.push(react.createElement('div', { key: '__err', className: 'fe-node-error', style: { paddingLeft: 6 + (props.depth + 1) * 14 } }, error));
@@ -1135,9 +1205,44 @@ body[data-ds-dark-theme] .fe-overlay-root {
 				});
 			};
 
+			// Expand the tree down to `path` and scroll its row into view, so the
+			// tree follows a file opened from search results.
+			const revealInTree = (path) => {
+				if (!tree || !tree.rootPath || !isInsideRoot(path, tree.rootPath)) return;
+				const rel = String(path).slice(tree.rootPath.length).replace(/^[\\/]+/, '');
+				const parts = rel.split(/[\\/]+/).filter(Boolean);
+				if (parts.length === 0) return;
+				const dirs = [tree.rootPath];
+				let dir = tree.rootPath;
+				for (let i = 0; i < parts.length - 1; i += 1) {
+					dir = dir + '/' + parts[i];
+					dirs.push(dir);
+				}
+				const toLoad = dirs.filter((d) => !tree.cache.has(d) && !tree.loading.has(d));
+				setTree((t) => {
+					if (!t) return t;
+					let expanded = t.expanded;
+					let loading = t.loading;
+					for (const d of dirs) {
+						if (!expanded.has(d)) expanded = withVal(expanded, d);
+						if (toLoad.indexOf(d) !== -1 && !loading.has(d)) loading = withVal(loading, d);
+					}
+					return { ...t, expanded, loading };
+				});
+				for (const d of toLoad) loadChildren(d);
+				selectFile(path);
+				if (typeof requestAnimationFrame === 'function') {
+					requestAnimationFrame(() => {
+						const el = document.querySelector('.fe-row-selected');
+						if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+					});
+				}
+			};
+
 			const selectFile = (path) => setTree((t) => t ? { ...t, selected: path } : t);
 
 			const openFile = (entry, startEditing, toggle) => {
+				revealInTree(entry.path);
 				const existing = s.tabs.find((t) => t.path === entry.path);
 				if (existing) {
 					if (existing.path !== s.activePath) {
@@ -1383,8 +1488,8 @@ body[data-ds-dark-theme] .fe-overlay-root {
 				if (tree.expanded.has(tree.rootPath)) {
 					const children = tree.cache.get(tree.rootPath);
 					if (children) {
-						for (const child of children) {
-							rows.push(react.createElement(TreeNode, { key: child.path, entry: child, depth: 1, tree, onToggle: toggleDir, onSelect: selectFile, onOpen: (e, toggle) => openFile(e, false, toggle) }));
+						for (const child of sortEntries(children, s.sort)) {
+							rows.push(react.createElement(TreeNode, { key: child.path, entry: child, depth: 1, tree, sort: s.sort, onToggle: toggleDir, onSelect: selectFile, onOpen: (e, toggle) => openFile(e, false, toggle) }));
 						}
 					} else if (!tree.loading.has(tree.rootPath) && tree.errors[tree.rootPath]) {
 						rows.push(react.createElement('div', { key: 'err', className: 'fe-node-error', style: { paddingLeft: 20 } }, tree.errors[tree.rootPath]));
@@ -1500,6 +1605,7 @@ body[data-ds-dark-theme] .fe-overlay-root {
 					react.createElement('button', { className: 'fe-iconbtn', title: (tree && tree.selected) ? 'Reveal selection in system file manager' : 'Open project in system file manager', onClick: onOpenFolder }, react.createElement(Icon, { name: 'openInNew', size: 15 })),
 					react.createElement('button', { className: 'fe-iconbtn', title: 'Expand all / Collapse all', onClick: toggleAll }, react.createElement(Icon, { name: 'chevronDown', size: 14 })),
 					react.createElement('button', { className: 'fe-iconbtn', title: 'Refresh', onClick: refresh }, react.createElement(Icon, { name: 'refresh', size: 14 })),
+					react.createElement('button', { className: 'fe-iconbtn', title: sortTitle(s.sort), onClick: () => setSort(nextSort(s.sort)) }, react.createElement(Icon, { name: 'sort', size: 14 })),
 					react.createElement('button', { className: 'fe-iconbtn' + (editor && editor.editing ? ' fe-iconbtn-on' : ''), title: canEdit ? 'Edit file' : 'Select a file in the tree to edit', style: canEdit ? undefined : { opacity: 0.35, cursor: 'default' }, onClick: onEditClick }, react.createElement(Icon, { name: 'edit', size: 14 })),
 					react.createElement('button', { className: 'fe-iconbtn', title: 'Collapse file tree', onClick: () => setOpen(false) }, react.createElement(Icon, { name: 'close', size: 14 })),
 				),
