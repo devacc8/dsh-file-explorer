@@ -1,43 +1,95 @@
 # dsh-file-explorer
 
-> **File Explorer for DeepSeek Harness** — right-side resizable file tree with Markdown rendering, syntax highlighting, in-panel editing, and one-click VS Code / system file manager open. Install: `dsh plugin --profile web add dsh-file-explorer`.
+> **File Explorer for DeepSeek Harness**: a right-side, resizable file tree with
+> Markdown rendering, syntax highlighting, in-panel editing, and one-click open in
+> VS Code or the system file manager.
 
-DeepSeek Harness 的全局文件资源管理器插件：在任何会话的标题栏右侧提供文件夹切换按钮，点击后在页面**右侧**打开可调宽度的文件树面板。
+This repository is a **vendored, hardened fork**. Upstream is
+[`joejojoking-cloud/dsh-file-explorer`](https://github.com/joejojoking-cloud/dsh-file-explorer);
+this fork is frozen (no upstream updates) and adds security fixes, a fully English
+UI, and a panel background that matches the Harness theme. See `FORK.md` for the
+provenance and the complete patch list, and `AUDIT.md` for the security audit.
 
-## 功能
+It is a global file explorer for DeepSeek Harness: every session gets a folder
+toggle in the header that opens a resizable file-tree panel on the **right** of
+the page.
 
-- 右侧面板（`shell.overlay`，可开关）：文件树与文件预览**独立收起**——各自左边缘有「>」按钮，收起文件树时预览保留并自动靠到页面右边缘；预览面板收起时标签全部保留，点树中文件即恢复；左边缘拖拽调宽（260–900px）
-- 预览标签化：浏览器式多标签——每个文件一个标签，按打开顺序排列、点击后台标签不改变顺序，标签条溢出时横向滚动，点击切换不重新加载，标签带 × 可单独关闭，全部关完面板消失
-- 双击聊天区：同时收起两个窗口，并按**项目过滤**——属于当前项目文件夹的预览标签保留，重新打开文件浏览器时自动恢复；不属于的关闭
-- 标题栏：「文件」+ 六个图标 —— VS Code（在 VS Code 中打开整个工作区）、系统文件浏览器（在系统文件管理器中打开当前选中项：选中目录直接打开、选中文件在所在文件夹中定位高亮，未选中时打开项目根目录）、全部展开/折叠、刷新、编辑、收起文件树（预览保留）
-- 搜索框「搜索文件」：递归扫描工作区（跳过 `.git` / `node_modules`，最多 300 条）
-- 文件树：根目录默认展开，目录点击展开/折叠（懒加载），文件单击/双击打开预览
-- 预览：`.md` 渲染 Markdown（标题/列表/代码块/引用/链接），Markdown 代码块按围栏语言高亮；其他文本文件按扩展名自动语法高亮（JSON / YAML / JS / TS / Python / C / C++ / Java / Go / Rust / Shell / SQL / TOML / INI / CSS / HTML 等）；「编辑」图标进入可编辑模式，保存写回磁盘；再次单击预览中的文件关闭该标签
-- 超过 1 MB 的文件提示不支持预览
+## Features
 
-## 安装
+- **Right-side panel** (`shell.overlay`, toggleable). The file tree and the preview
+  pane collapse **independently**: each has its own `>` handle on its left edge.
+  Collapsing the tree keeps the preview and snaps it to the right edge; collapsing
+  the preview keeps every tab, and reopening restores it. Drag the left edge to
+  resize (260 to 900 px).
+- **Tabbed preview.** Browser-style tabs, one per file, in open order. Clicking a
+  background tab does not reorder, the strip scrolls when it overflows, switching
+  does not reload, each tab closes with `×`, and closing the last one hides the pane.
+- **Double-click the chat area** collapses both panes and applies a **project
+  filter**: tabs whose file lives inside the current project folder are kept
+  (hidden) and restored when the tree reopens, while tabs from elsewhere are closed.
+- **Header:** "Files" plus six icons: VS Code (open the whole workspace in VS Code),
+  system file manager (open the current selection: a directory opens directly, a
+  file is revealed and highlighted in its folder, nothing selected opens the project
+  root), expand/collapse all, refresh, edit, and collapse the file tree (preview
+  kept).
+- **Search box:** recursively scans the workspace (skips `.git` and `node_modules`,
+  capped at 300 matches).
+- **File tree:** the root is expanded by default, directories expand and collapse on
+  click (lazy), and a single or double click on a file opens it in the preview.
+- **Preview:** `.md` files render Markdown (headings, lists, code blocks, quotes,
+  links); fenced code blocks are highlighted by language, and other text files are
+  highlighted by extension (JSON, YAML, JS, TS, Python, C, C++, Java, Go, Rust,
+  Shell, SQL, TOML, INI, CSS, HTML, and more). The edit icon switches to an editable
+  textarea and saving writes back to disk; clicking the previewed file again closes
+  its tab.
+- Files larger than 1 MB report that preview is not supported.
+
+## Install
 
 ```sh
-dsh plugin --profile web add <本包路径或 npm 包名>
+dsh plugin --profile web add <path-to-this-package-or-npm-name>
 ```
 
-重启 harness 后生效：所有会话都会加载该插件（host 路由 `/plugins/file-explorer/*` + web client 面板）。
+Restart the harness afterwards: every session then loads the plugin (host routes
+under `/plugins/file-explorer/*` plus the web client panel).
 
-## 结构
+## Layout
 
-- `src/index.ts` — host 半部（构建到 `lib/index.js`）：`fs`/`shell` 服务 + `webServer` HTTP 路由（list / search / read / write / open-vscode / open-folder）
-- `src/client/index.ts` — web client 半部（`tsc` → `lib/client/index.js` → `tsdown` → `lib/client.js`）：注册 `shell.overlay` 面板与 `conversation.session.header.actions` 切换按钮
-- `cordis.patch.yml` — bundle 补丁，把 `file-explorer` 行插入 profile 的 host 组合
+- `src/index.ts` - host half (built to `lib/index.js`): the `fs` service plus the
+  `webServer` HTTP routes (list, search, read, write, open-vscode, open-folder).
+- `src/client/index.ts` - web client half (`tsc` to `lib/client/index.js`, then
+  `tsdown` to `lib/client.js`): registers the `shell.overlay` panel and the
+  `conversation.session.header.actions` toggle.
+- `cordis.patch.yml` - bundle patch that inserts the `file-explorer` row into the
+  profile's host composition.
 
-## 开发（重要）
+## Development (important)
 
 ```sh
 pnpm run build        # clean && tsc && tsc -p tsconfig.client.json && tsdown
 node --check lib/client.js
-pnpm test             # host 半部单元测试（node --test）
+pnpm test             # host half unit tests (node --test)
 ```
 
-**永远不要直接改 `lib/` 下的产物**：它们由 `src/` 构建生成。历史上直接手改 `lib/client.js` 曾把反引号写进 CSS 模板字符串，导致模板提前终止、整个 bundle `SyntaxError`、启动报 "loaded without registering"；而且下次构建会覆盖掉落手改内容。样式/逻辑改动一律落 `src/`，构建后由 host 的 rev 内容哈希自动换新。
+**Never edit the artifacts under `lib/` directly**: they are generated from `src/`.
+Historically a hand edit put a backtick inside the CSS template literal, which
+terminated the template early, produced a `SyntaxError` in the whole bundle, and
+made startup report "loaded without registering"; the next build also overwrites
+hand edits. Put style and logic changes in `src/`.
 
-已有约定：`[data-phase=active]` 的右侧让位 padding **即时生效**（无 `transition`/`will-change`）——动画化的聊天列宽在流式期间会让 transcript 重排竞争 scroll anchoring，造成消息上跳/内容空白。
+Convention already in place: the right-hand padding concession on
+`[data-phase=active]` applies **instantly** (no `transition` / `will-change`). An
+animated chat column width competes with scroll anchoring while the transcript
+streams, which made messages jump, the bottom rise, or the column paint blank.
 
+## Notes specific to this fork
+
+- The client bundle (`lib/client.js`) is hand-patched here, because the upstream
+  client build toolchain cannot be installed standalone (its declared
+  `@deepseek-ai/dsh-client-*` peers pull an unpublished
+  `@deepseek-ai/dsh-compact`). Every client change is mirrored into
+  `src/client/index.ts`, so a future build reproduces it.
+- The host half is regenerated mechanically: `tsc -p tsconfig.json` reproduces
+  `lib/index.js` byte for byte from `src/index.ts` (verified).
+- Security fixes and the edit-button fix were also contributed upstream as PRs #7
+  and #8; the English UI and the theme-matched panel are intentionally fork-only.
