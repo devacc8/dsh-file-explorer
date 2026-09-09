@@ -49,11 +49,34 @@ surface minimal (package export `./client` resolves to `lib/client.js`).
    edit" and reports that same message instead of failing silently.
 3. **Markdown link hardening.** Rendered markdown links now reject dangerous schemes
    (`javascript:`, `data:`, `vbscript:`, `blob:`, `file:`) after control-character
-   normalization; such links render as plain text. Relative and http(s)/mailto links
-   are unaffected.
+   normalization; such links render as plain text. Remote images and links carry
+   `referrerpolicy="no-referrer"` (no origin leak) and images load lazily.
+   `escapeHtml` also escapes the single quote.
+4. **Workspace confinement (host).** Upstream forwarded the raw request path to
+   `ctx.fs`, and the DSH fs sandbox fences *writes only* — reads passed through, so
+   `read?path=/etc/hostname`, `~/.ssh/id_ed25519` and `~/.dsh/.credentials.yaml`
+   were all readable over an unauthenticated loopback route. Every path is now
+   resolved and confined to a registered workspace root (`workspaceRegistry`) or the
+   host launch directory; anything else is `403`. Existing targets are realpath'd
+   first so a symlink cannot escape.
+5. **No shell, argv only.** The upstream `shell` fallback built a PowerShell string
+   (`Start-Process ... -ArgumentList "<path>"`) whose `""` escaping does not stop
+   `$(...)`/backtick expansion. It is removed; `open-vscode` and `open-folder` launch
+   only through `subprocess.spawn` with an argv array. Paths containing control
+   characters (and, on Windows, `&|<>^%`) are rejected.
+6. **CSRF gate.** POST routes now require `content-type: application/json` and reject
+   a cross-origin `Origin`. A cross-origin page can no longer drive `write` /
+   `open-*` through a simple request (a JSON request would need a preflight that the
+   server never grants).
+7. **Test suite.** The single pre-existing failure (a Windows-only case running on
+   Linux) is now platform-explicit, and tests cover confinement and the CSRF gate.
+   `node --test` is green: 14 pass, 3 skipped (win32-only).
 
-`src/` and `lib/` carry the same patches, so a rebuild from `src/` reproduces the
-running artifact (see "Build" below).
+`src/` and `lib/` carry the same patches. For the host half this is enforced
+mechanically: `tsc -p tsconfig.json` regenerates `lib/index.js` from `src/index.ts`
+and the output is byte-identical to the committed file (verified). The client half
+was hand-patched in `lib/client.js` and mirrored into `src/client/index.ts`; a
+rebuild needs the upstream `tsdown` toolchain (see "Build" below).
 
 ## Security audit
 
