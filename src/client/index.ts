@@ -53,7 +53,7 @@ html[data-fe-panel-open] [data-phase=active] {
 .fe-panel {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 100;
   display: flex; flex-direction: column;
-  background: var(--dsw-alias-bg-overlay);
+  background: var(--dsw-alias-bg-base);
   border-left: 1px solid var(--dsw-alias-border-l1);
   box-shadow: -4px 0 16px rgba(0,0,0,.12);
   color: var(--dsw-alias-label-primary);
@@ -75,7 +75,7 @@ html[data-fe-panel-open] [data-phase=active] {
   padding: 0;
   border: 1px solid var(--dsw-alias-border-l1); border-right: none;
   border-radius: 7px 0 0 7px;
-  background: var(--dsw-alias-bg-overlay);
+  background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-secondary);
   box-shadow: -3px 0 8px rgba(0,0,0,.10);
   cursor: pointer; z-index: 6;
@@ -150,7 +150,7 @@ html[data-fe-panel-open] [data-phase=active] {
 .fe-preview {
   position: fixed; top: 0; bottom: 0; z-index: 99;
   display: flex; flex-direction: column;
-  background: var(--dsw-alias-bg-overlay);
+  background: var(--dsw-alias-bg-base);
   border-right: 1px solid var(--dsw-alias-border-l1);
   box-shadow: -4px 0 16px rgba(0,0,0,.12);
   color: var(--dsw-alias-label-primary);
@@ -169,7 +169,7 @@ html[data-fe-panel-open] [data-phase=active] {
 .fe-preview-plain {
   flex: 1; overflow: auto; margin: 0;
   padding: 8px 10px;
-  background: var(--dsw-alias-bg-layer-1);
+  background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-primary);
   font-family: ui-monospace, SFMono-Regular, Consolas, 'Courier New', monospace;
   font-size: 12px; line-height: 1.5;
@@ -193,7 +193,7 @@ html[data-fe-panel-open] [data-phase=active] {
 .fe-editor-textarea {
   flex: 1; width: 100%; resize: none;
   padding: 8px; border: none; outline: none;
-  background: var(--dsw-alias-bg-layer-1);
+  background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-primary);
   font-family: ui-monospace, SFMono-Regular, Consolas, 'Courier New', monospace;
   font-size: 12px; line-height: 1.5; white-space: pre;
@@ -203,7 +203,7 @@ html[data-fe-panel-open] [data-phase=active] {
 .fe-tabbar {
   display: flex; align-items: stretch; gap: 2px;
   padding: 4px 6px 0; overflow-x: auto; flex: none;
-  background: var(--dsw-alias-bg-layer-1);
+  background: var(--dsw-alias-bg-base);
   border-bottom: 1px solid var(--dsw-alias-border-l1);
 }
 .fe-tab {
@@ -215,7 +215,7 @@ html[data-fe-panel-open] [data-phase=active] {
   font-size: 12px; cursor: pointer; white-space: nowrap;
 }
 .fe-tab:hover { background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-primary); }
-.fe-tab-active { background: var(--dsw-alias-bg-overlay); color: var(--dsw-alias-label-primary); }
+.fe-tab-active { background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); }
 .fe-tab-name { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .fe-tab-close {
   display: flex; align-items: center; justify-content: center;

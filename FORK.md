@@ -83,6 +83,13 @@ surface minimal (package export `./client` resolves to `lib/client.js`).
    plugin routes (its web server does not validate the GUI token or issue a session
    cookie), and a local process could send the header anyway — though it can already
    read the same files directly.
+10. **Panel background matches the Harness theme.** The panel and preview used
+    `--dsw-alias-bg-overlay` (light `#e9ecf2`, dark `#61666b`), which read as a
+    grey slab beside the app. The panel, preview pane, tab bar, active tab, plain
+    preview and editor surfaces now use `--dsw-alias-bg-base` (light `#fff`, dark
+    `#151517`) — the same token the app frame uses — so the panel blends in both
+    themes automatically. Small controls (search field, buttons) and markdown code
+    blocks keep `bg-layer-1/2` for affordance; hover states are unchanged.
 
 `src/` and `lib/` carry the same patches. For the host half this is enforced
 mechanically: `tsc -p tsconfig.json` regenerates `lib/index.js` from `src/index.ts`
