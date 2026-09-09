@@ -121,6 +121,7 @@ public fork (`devacc8/dsh-file-explorer-contrib`):
 |---|---|
 | [#7](https://github.com/joejojoking-cloud/dsh-file-explorer/pull/7) | Workspace confinement, argv-only launching, CSRF/header gate, markdown hardening |
 | [#8](https://github.com/joejojoking-cloud/dsh-file-explorer/pull/8) | Edit button disabled when there is nothing to edit |
+| [#9](https://github.com/joejojoking-cloud/dsh-file-explorer/pull/9) | File-type colours and glyphs, indent guides, reveal-in-tree, sorting (plus `mtime` in the listing) |
 
 Deliberately **excluded** from those PRs: the English localization (already
 covered by the upstream bilingual PR #6), the panel theme match, and the pencil
