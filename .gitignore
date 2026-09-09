@@ -1,0 +1,9 @@
+node_modules/
+*.log
+.DS_Store
+TUI-Assessment.md
+
+# Local pnpm tooling (registry mirror is user-specific)
+.npmrc
+pnpm-lock.yaml
+pnpm-workspace.yaml
