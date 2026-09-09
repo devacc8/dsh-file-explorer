@@ -69,8 +69,20 @@ surface minimal (package export `./client` resolves to `lib/client.js`).
    `open-*` through a simple request (a JSON request would need a preflight that the
    server never grants).
 7. **Test suite.** The single pre-existing failure (a Windows-only case running on
-   Linux) is now platform-explicit, and tests cover confinement and the CSRF gate.
-   `node --test` is green: 14 pass, 3 skipped (win32-only).
+   Linux) is now platform-explicit, and tests cover confinement, the CSRF gate and
+   the inline renderer. `node --test` is green: 21 pass, 3 skipped (win32-only).
+8. **Inline code stays literal.** In `mdInline`, code spans were transformed before
+   link/image syntax, so `` `![x](…)` `` rendered a live `<img>` inside `<code>`
+   (a remote request from text the author meant as literal) and left a stray `)`.
+   Code spans are now parked in placeholders, the other inline rules run, then the
+   spans are restored. Regression tests in `test/md-inline.test.mjs`.
+9. **Plugin header on every route.** All six routes require
+   `x-dsh-file-explorer: 1`, which the client sends. A cross-origin page cannot set
+   a custom header without a preflight the server never grants. This is a CSRF /
+   defence-in-depth layer, **not** authentication: DSH exposes no auth hook for
+   plugin routes (its web server does not validate the GUI token or issue a session
+   cookie), and a local process could send the header anyway — though it can already
+   read the same files directly.
 
 `src/` and `lib/` carry the same patches. For the host half this is enforced
 mechanically: `tsc -p tsconfig.json` regenerates `lib/index.js` from `src/index.ts`

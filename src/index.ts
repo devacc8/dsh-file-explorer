@@ -18,9 +18,10 @@
  *    containment check must live here);
  *  - external programs are launched with an argv array only, never through
  *    a shell string (the upstream shell fallback was removed);
- *  - POST routes require a JSON content type and reject cross-origin
- *    requests, which blocks browser CSRF (a simple cross-origin request
- *    cannot set application/json without a preflight).
+ *  - every route requires the plugin header (a custom header forces a CORS
+ *    preflight the server never grants) and rejects a cross-origin Origin;
+ *    POST routes additionally require a JSON content type, which blocks
+ *    browser CSRF (a simple cross-origin request cannot set either).
  *
  * @module dsh-file-explorer
  */
@@ -30,6 +31,7 @@ export const name = 'file-explorer'
 export const inject = ['fs']
 
 const MAX_READ = 1_000_000
+const PLUGIN_HEADER = 'x-dsh-file-explorer'
 
 export function apply(ctx) {
   const fs = ctx.fs
@@ -142,12 +144,27 @@ export function apply(ctx) {
     }
   }
 
-  /** Gate for state-changing routes: same origin + explicit JSON content type. */
-  const guardPost = (req, res) => {
+  /**
+   * Every route requires the plugin header. A cross-origin page cannot set a
+   * custom header without a preflight the server never grants, so this is a
+   * CSRF / defence-in-depth layer, not authentication: a local process can send
+   * it too (though it can already read these files directly).
+   */
+  const guard = (req, res) => {
+    if (String((req.headers ?? {})[PLUGIN_HEADER] ?? '') !== '1') {
+      send(res, 403, { error: 'missing plugin header' })
+      return false
+    }
     if (!sameOrigin(req)) {
       send(res, 403, { error: 'cross-origin request rejected' })
       return false
     }
+    return true
+  }
+
+  /** Gate for state-changing routes: plugin header + same origin + JSON. */
+  const guardPost = (req, res) => {
+    if (!guard(req, res)) return false
     const type = String((req.headers ?? {})['content-type'] ?? '')
     if (!type.toLowerCase().startsWith('application/json')) {
       send(res, 415, { error: 'content-type must be application/json' })
@@ -170,10 +187,7 @@ export function apply(ctx) {
     route('/plugins/file-explorer/list', async (req, res) => {
       const path = requirePath(req, res)
       if (path === null) return
-      if (!sameOrigin(req)) {
-        send(res, 403, { error: 'cross-origin request rejected' })
-        return
-      }
+      if (!guard(req, res)) return
       try {
         const target = await fs.resolve(path)
         const display = fs.processPath(target)
@@ -204,10 +218,7 @@ export function apply(ctx) {
         send(res, 200, { matches: [], truncated: false })
         return
       }
-      if (!sameOrigin(req)) {
-        send(res, 403, { error: 'cross-origin request rejected' })
-        return
-      }
+      if (!guard(req, res)) return
       try {
         const rootTarget = await fs.resolve(root)
         await confine(fs.processPath(rootTarget))
@@ -245,10 +256,7 @@ export function apply(ctx) {
     route('/plugins/file-explorer/read', async (req, res) => {
       const path = requirePath(req, res)
       if (path === null) return
-      if (!sameOrigin(req)) {
-        send(res, 403, { error: 'cross-origin request rejected' })
-        return
-      }
+      if (!guard(req, res)) return
       try {
         const target = await fs.resolve(path)
         const display = fs.processPath(target)

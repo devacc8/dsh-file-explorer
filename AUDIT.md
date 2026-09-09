@@ -85,7 +85,8 @@ Exactly six network sinks, all relative to the page origin
 | 3 | medium | Windows `cmd /c <code.cmd> <path>` re-parse: a path containing `&` is re-interpreted by cmd.exe (libuv quotes only args with space/tab/quote). | **Fixed** — paths containing control characters, and on Windows `&|<>^%`, are rejected with 400. |
 | 4 | medium | **CSRF-able routes.** No `Origin`/content-type check; a cross-origin `text/plain` POST reached `write` (a CORS simple request, no preflight) and created a file. | **Fixed** — POST routes require `application/json` and a same-origin `Origin`; cross-origin POST now 403. |
 | 5 | medium | Markdown images loaded any `https?://` URL, so previewing untrusted markdown fired a third-party request leaking IP and the origin `Referer`. | **Fixed** — `referrerpolicy="no-referrer"` + `loading="lazy"` on images and links. The IP itself still reaches the host named in the file text (inherent to remote images). |
-| 6 | low | Inline code spans are processed before link/image syntax, so `![x](…)` inside backticks still renders an image. | **Accepted (open)** — cosmetic; fenced code blocks are unaffected. |
+| 6 | low | Inline code spans were transformed before link/image syntax, so `` `![x](…)` `` rendered a live `<img>` inside `<code>` (a remote request from literal text) and left a stray `)`. | **Fixed** — code spans are parked in placeholders and restored; regression tests in `test/md-inline.test.mjs`. |
+| 6b | info | No route-level gate existed beyond origin/content-type, and DSH offers no auth hook for plugin routes. | **Hardened** — every route now requires `x-dsh-file-explorer: 1`; documented as CSRF defence-in-depth, not authentication. |
 | 7 | low | Edit (pencil) button silently did nothing when no file was editable. | **Fixed** — greyed state, tooltip, and a status message. |
 | 8 | low (positive) | Writes were already confined by the fs sandbox (`FS_SANDBOX_DENIED` outside the workspace). | **Kept**, and now also checked by the plugin. |
 | 9 | info (positive) | No XSS in the client: `escapeHtml` runs before every insertion; link schemes denylisted. | **Kept**, single quote now escaped too. |
@@ -99,9 +100,11 @@ Exactly six network sinks, all relative to the page origin
   helper, argv-only spawning, CSRF gate, path validation, dead `shell` fallback
   removed.
 - `src/client/index.ts` + `lib/client.js`: `referrerpolicy` / lazy images,
-  `escapeHtml` single quote.
-- `test/open-folder.test.mjs`: platform-explicit win32 case plus confinement and
-  CSRF tests.
+  `escapeHtml` single quote, inline-code placeholders, and the plugin header on all
+  six fetches.
+- `test/open-folder.test.mjs`: platform-explicit win32 case plus confinement, CSRF
+  and plugin-header tests. `test/md-inline.test.mjs`: inline renderer regressions
+  (executes the shipped `mdInline` extracted from `lib/client.js`).
 
 ## Live verification
 
@@ -115,8 +118,9 @@ Exactly six network sinks, all relative to the page origin
 | `list?path=<workspace>` | 200 | **200** |
 | `POST write` with `Origin: https://evil.example` | 200, file created | **403** |
 | `POST write` with `content-type: text/plain` | 200 | **415** |
+| any route without `x-dsh-file-explorer: 1` | 200 | **403** |
 
-`node --test`: 14 pass, 0 fail, 3 skipped (win32-only).
+`node --test`: 21 pass, 0 fail, 3 skipped (win32-only).
 
 ## Explicit non-capabilities (after the fixes)
 
@@ -136,7 +140,7 @@ The plugin cannot:
 - Runtime supply chain is nil: the only import is `react`, a host-provided peer.
 - `open-vscode` / `open-folder` remain the only actions touching the wider system;
   they are user-triggered, path-confined, and argv-only.
-- Finding 6 (inline-code ordering) is open and cosmetic.
+- The plugin header is not authentication (see finding 6b); DSH provides no hook to bind plugin routes to the authenticated GUI session.
 
 ## Independent review
 

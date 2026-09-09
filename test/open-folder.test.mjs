@@ -42,7 +42,7 @@ const post = (routes, body, extraHeaders = {}) => new Promise((resolve, reject) 
   const handler = routes.get('/plugins/file-explorer/open-folder')
   const req = {
     method: 'POST',
-    headers: { 'content-type': 'application/json', ...extraHeaders },
+    headers: { 'content-type': 'application/json', 'x-dsh-file-explorer': '1', ...extraHeaders },
     url: '/plugins/file-explorer/open-folder',
     [Symbol.asyncIterator]() {
       const chunk = Buffer.from(body === undefined ? 'not-json' : JSON.stringify(body))
@@ -229,4 +229,12 @@ test('csrf: allows a same-origin JSON POST', async () => {
   const routes = build({ subprocess, entries: { '/srv/proj': { type: 'directory' } } })
   const res = await post(routes, { path: '/srv/proj' }, { origin: 'http://127.0.0.1:3080', host: '127.0.0.1:3080' })
   assert.equal(res.status, 200)
+})
+
+test('plugin header: a request without it is rejected', async () => {
+  const { subprocess } = recordSubprocess({ 'xdg-open': '/usr/bin/xdg-open' }, 0)
+  const routes = build({ subprocess, entries: { '/srv/proj': { type: 'directory' } } })
+  const res = await post(routes, { path: '/srv/proj' }, { 'x-dsh-file-explorer': '0' })
+  assert.equal(res.status, 403)
+  assert.equal(res.body.error, 'missing plugin header')
 })
