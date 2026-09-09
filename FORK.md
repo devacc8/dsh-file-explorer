@@ -97,6 +97,24 @@ and the output is byte-identical to the committed file (verified). The client ha
 was hand-patched in `lib/client.js` and mirrored into `src/client/index.ts`; a
 rebuild needs the upstream `tsdown` toolchain (see "Build" below).
 
+## Repository and upstream contribution
+
+Our canonical fork is private: **https://github.com/devacc8/dsh-file-explorer**
+(a fork of a public repository cannot be private, so this is a standalone repo;
+the local directory is pushed there as `origin`).
+
+Fixes that are not specific to our fork were contributed upstream from a separate
+public fork (`devacc8/dsh-file-explorer-contrib`):
+
+| PR | Contents |
+|---|---|
+| [#7](https://github.com/joejojoking-cloud/dsh-file-explorer/pull/7) | Workspace confinement, argv-only launching, CSRF/header gate, markdown hardening |
+| [#8](https://github.com/joejojoking-cloud/dsh-file-explorer/pull/8) | Edit button disabled when there is nothing to edit |
+
+Deliberately **excluded** from those PRs: the English localization (already
+covered by the upstream bilingual PR #6), the panel theme match, and the pencil
+hint message — those are our fork's preferences.
+
 ## Security audit
 
 See `AUDIT.md` for the full audit (capabilities, network sinks, process execution,
