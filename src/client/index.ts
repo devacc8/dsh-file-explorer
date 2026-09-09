@@ -120,29 +120,71 @@ html[data-fe-panel-open] [data-phase=active] {
 .fe-status { padding: 4px 10px; font-size: 11px; flex: none; }
 .fe-status-ok { color: var(--dsw-alias-state-success-primary); }
 .fe-status-err { color: var(--dsw-alias-state-error-primary); }
-.fe-tree { flex: 1; overflow: auto; padding: 2px 0 8px; user-select: none; }
-.fe-row {
-  display: flex; align-items: center; gap: 4px;
-  padding: 2px 8px; margin: 0 4px;
-  border-radius: 5px; cursor: pointer; white-space: nowrap;
+/* File-type tones: one shade per family, tuned separately for light and dark. */
+.fe-overlay-root {
+  --fe-tone-dir: #7f8b99;
+  --fe-tone-md: #3d86c6;
+  --fe-tone-code: #a9761a;
+  --fe-tone-json: #a8641c;
+  --fe-tone-style: #2a8b9c;
+  --fe-tone-markup: #c04a47;
+  --fe-tone-data: #8a5bbf;
+  --fe-tone-shell: #4a9a3c;
+  --fe-tone-script: #3a72c9;
+  --fe-tone-image: #3f9a68;
+  --fe-tone-default: var(--dsw-alias-label-tertiary);
 }
-.fe-row:hover { background: var(--dsw-alias-bg-layer-1); }
-.fe-row-selected { background: var(--dsw-alias-bg-layer-2); }
-.fe-row-selected .fe-node-name { color: var(--dsw-alias-label-primary); }
+body[data-ds-dark-theme] .fe-overlay-root {
+  --fe-tone-dir: #8b98a5;
+  --fe-tone-md: #519aba;
+  --fe-tone-code: #e5c07b;
+  --fe-tone-json: #d19a66;
+  --fe-tone-style: #56b6c2;
+  --fe-tone-markup: #e06c75;
+  --fe-tone-data: #c678dd;
+  --fe-tone-shell: #98c379;
+  --fe-tone-script: #61afef;
+  --fe-tone-image: #7ec98f;
+}
+.fe-tone-dir { color: var(--fe-tone-dir); }
+.fe-tone-md { color: var(--fe-tone-md); }
+.fe-tone-code { color: var(--fe-tone-code); }
+.fe-tone-json { color: var(--fe-tone-json); }
+.fe-tone-style { color: var(--fe-tone-style); }
+.fe-tone-markup { color: var(--fe-tone-markup); }
+.fe-tone-data { color: var(--fe-tone-data); }
+.fe-tone-shell { color: var(--fe-tone-shell); }
+.fe-tone-script { color: var(--fe-tone-script); }
+.fe-tone-image { color: var(--fe-tone-image); }
+.fe-tone-default { color: var(--fe-tone-default); }
+.fe-tree { flex: 1; overflow: auto; padding: 4px 0 10px; user-select: none; }
+.fe-row {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 8px; margin: 0 4px;
+  border-radius: 6px; cursor: pointer; white-space: nowrap;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12.5px;
+}
+.fe-row:hover { background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); }
+.fe-row-selected {
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: inset 2px 0 0 var(--dsw-alias-state-business-primary);
+}
 .fe-chevron {
   width: 14px; height: 14px; flex: none;
   display: flex; align-items: center; justify-content: center;
-  color: var(--dsw-alias-label-secondary);
+  color: var(--dsw-alias-label-tertiary);
 }
 .fe-chevron-none { visibility: hidden; }
 .fe-node-icon { display: flex; flex: none; }
-.fe-node-dir { color: var(--dsw-alias-brand-primary); }
-.fe-node-file { color: var(--dsw-alias-label-secondary); }
 .fe-node-name { overflow: hidden; text-overflow: ellipsis; }
 .fe-node-size, .fe-node-rel {
   margin-left: auto; padding-left: 8px; flex: none;
-  color: var(--dsw-alias-label-secondary); font-size: 11px;
+  color: var(--dsw-alias-label-caption); font-size: 11px;
 }
+.fe-node-size { opacity: 0; transition: opacity .12s ease; }
+.fe-row:hover .fe-node-size, .fe-row-selected .fe-node-size { opacity: 1; }
 .fe-node-rel { max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
 .fe-node-loading { color: var(--dsw-alias-label-secondary); font-size: 11px; }
 .fe-node-error { color: var(--dsw-alias-state-error-primary); font-size: 12px; padding: 4px 8px; }
@@ -871,6 +913,8 @@ html[data-fe-panel-open] [data-phase=active] {
 			close: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
 			folder: 'M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z',
 			file: 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z',
+			md: 'M6 2h8l4 4v16H6V2zm6 7l-3 3h2v4h2v-4h2l-3-3z',
+			image: 'M4 5h16v14H4V5zM9 8a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 1 0 0-3.2zM6.4 17l4-5 2.8 3.6 1.6-1.7 3 3.1H6.4z',
 			files: 'M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z',
 		};
 		const Icon = (props) => react.createElement('svg', {
@@ -879,7 +923,27 @@ html[data-fe-panel-open] [data-phase=active] {
 			viewBox: '0 0 24 24',
 			fill: 'currentColor',
 			style: { display: 'block' },
-		}, react.createElement('path', { d: iconPaths[props.name] }));
+		}, react.createElement('path', { d: iconPaths[props.name], fillRule: props.fillRule }));
+		// VS Code-style file families: one tone per type (CSS fe-tone-*) plus a
+		// distinct glyph for markdown and images.
+		const FILE_TYPES = [
+			{ tone: 'md', icon: 'md', fillRule: 'evenodd', exts: ['md', 'markdown', 'mdx', 'mdown', 'mkd'] },
+			{ tone: 'code', exts: ['js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'mts', 'cts'] },
+			{ tone: 'json', exts: ['json', 'jsonc', 'json5'] },
+			{ tone: 'style', exts: ['css', 'scss', 'sass', 'less'] },
+			{ tone: 'markup', exts: ['html', 'htm', 'xml', 'svg', 'vue', 'svelte'] },
+			{ tone: 'data', exts: ['yaml', 'yml', 'toml', 'ini', 'env', 'conf', 'cfg', 'properties'] },
+			{ tone: 'shell', exts: ['sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd'] },
+			{ tone: 'script', exts: ['py', 'rb', 'go', 'rs', 'java', 'c', 'cpp', 'cc', 'h', 'hpp', 'cs', 'php', 'lua', 'swift', 'kt'] },
+			{ tone: 'image', icon: 'image', fillRule: 'evenodd', exts: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'avif'] },
+		];
+		const fileTypeOf = (name) => {
+			const ext = String(name).toLowerCase().split('.').pop();
+			for (const type of FILE_TYPES) {
+				if (type.exts.indexOf(ext) !== -1) return { tone: type.tone, icon: type.icon || 'file', fillRule: type.fillRule };
+			}
+			return { tone: 'default', icon: 'file', fillRule: undefined };
+		};
 
 		const fmtSize = (n) => {
 			if (n === null || n === undefined) return '';
@@ -905,6 +969,7 @@ html[data-fe-panel-open] [data-phase=active] {
 			const entry = props.entry;
 			const tree = props.tree;
 			const isDir = entry.type === 'directory';
+			const fileType = isDir ? { tone: 'dir', icon: 'folder' } : fileTypeOf(entry.name);
 			const expanded = tree.expanded.has(entry.path);
 			const loading = tree.loading.has(entry.path);
 			const error = tree.errors[entry.path];
@@ -919,8 +984,8 @@ html[data-fe-panel-open] [data-phase=active] {
 				react.createElement('span', { className: 'fe-chevron' + (isDir ? '' : ' fe-chevron-none') }, isDir
 					? react.createElement(Icon, { name: expanded ? 'chevronDown' : 'chevronRight', size: 12 })
 					: null),
-				react.createElement('span', { className: 'fe-node-icon fe-node-' + (isDir ? 'dir' : 'file') },
-					react.createElement(Icon, { name: isDir ? 'folder' : 'file', size: 14 })),
+				react.createElement('span', { className: 'fe-node-icon fe-tone-' + (isDir ? 'dir' : fileType.tone) },
+					react.createElement(Icon, { name: isDir ? 'folder' : fileType.icon, size: 14, fillRule: isDir ? undefined : fileType.fillRule })),
 				react.createElement('span', { className: 'fe-node-name', title: entry.name }, entry.name),
 				isDir && loading ? react.createElement('span', { className: 'fe-node-loading' }, '…') : null,
 				!isDir && typeof entry.size === 'number' ? react.createElement('span', { className: 'fe-node-size' }, fmtSize(entry.size)) : null,
@@ -1311,7 +1376,7 @@ html[data-fe-panel-open] [data-phase=active] {
 					title: tree.rootPath,
 				},
 					react.createElement('span', { className: 'fe-chevron' }, react.createElement(Icon, { name: tree.expanded.has(tree.rootPath) ? 'chevronDown' : 'chevronRight', size: 12 })),
-					react.createElement('span', { className: 'fe-node-icon fe-node-dir' }, react.createElement(Icon, { name: 'folder', size: 14 })),
+					react.createElement('span', { className: 'fe-node-icon fe-tone-dir' }, react.createElement(Icon, { name: 'folder', size: 14 })),
 					react.createElement('span', { className: 'fe-node-name', title: tree.rootName }, tree.rootName || tree.rootPath),
 					tree.loading.has(tree.rootPath) ? react.createElement('span', { className: 'fe-node-loading' }, '…') : null,
 				));
@@ -1335,6 +1400,7 @@ html[data-fe-panel-open] [data-phase=active] {
 				const rows = [];
 				for (const m of s.matches) {
 					const rel = m.path.slice(tree && tree.rootPath ? tree.rootPath.length : 0).replace(/^[\\/]+/, '');
+					const ft = m.type === 'directory' ? { tone: 'dir', icon: 'folder' } : fileTypeOf(m.name);
 					rows.push(react.createElement('div', {
 						key: m.path,
 						className: 'fe-row' + (tree && tree.selected === m.path ? ' fe-row-selected' : ''),
@@ -1343,7 +1409,7 @@ html[data-fe-panel-open] [data-phase=active] {
 						onDoubleClick: () => m.type === 'directory' ? selectFile(m.path) : openFile(m, false, false),
 						title: m.path,
 					},
-						react.createElement('span', { className: 'fe-node-icon fe-node-' + (m.type === 'directory' ? 'dir' : 'file') }, react.createElement(Icon, { name: m.type === 'directory' ? 'folder' : 'file', size: 14 })),
+						react.createElement('span', { className: 'fe-node-icon fe-tone-' + ft.tone }, react.createElement(Icon, { name: ft.icon, size: 14, fillRule: ft.fillRule })),
 						react.createElement('span', { className: 'fe-node-name', title: m.name }, m.name),
 						react.createElement('span', { className: 'fe-node-rel' }, rel || '.'),
 					));

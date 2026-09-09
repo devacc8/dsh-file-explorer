@@ -91,6 +91,17 @@ surface minimal (package export `./client` resolves to `lib/client.js`).
     themes automatically. Small controls (search field, buttons) and markdown code
     blocks keep `bg-layer-1/2` for affordance; hover states are unchanged.
 
+11. **File-type styling in the tree.** Every file used one grey glyph, and folders
+    were painted near the text colour, so the tree read as a wall of identical rows.
+    Files now carry a tone per family (markdown, code, json, style, markup, data,
+    shell, script, image) with a separate shade for light and dark themes, plus
+    distinct glyphs for markdown and images. The row styling was softened: folders
+    are muted, names sit at secondary weight and brighten on hover, the file size
+    only appears on hover or when selected, the selected row gets a 2 px accent bar,
+    and row padding/radius were opened up. Tones are CSS variables on
+    `.fe-overlay-root`, overridden under `body[data-ds-dark-theme]`.
+    Regression tests in `test/file-types.test.mjs`.
+
 `src/` and `lib/` carry the same patches. For the host half this is enforced
 mechanically: `tsc -p tsconfig.json` regenerates `lib/index.js` from `src/index.ts`
 and the output is byte-identical to the committed file (verified). The client half
