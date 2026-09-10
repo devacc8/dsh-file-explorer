@@ -7,3 +7,6 @@ TUI-Assessment.md
 .npmrc
 pnpm-lock.yaml
 pnpm-workspace.yaml
+
+# Local type-only install used to run tsc when building lib/ (never commit it).
+node_modules-types/
