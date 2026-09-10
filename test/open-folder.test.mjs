@@ -129,18 +129,27 @@ test('win32: reveals a file with /select', { skip: process.platform !== 'win32' 
   assert.deepEqual(calls[0].argv, ['C:\\Windows\\explorer.exe', '/select,C:\\proj\\a.txt'])
 })
 
-test('win32: falls back to Start-Process explorer when explorer is not resolvable', { skip: process.platform !== 'win32' }, async () => {
-  const commands = []
-  const shell = {
-    resolve: (spec) => ({ ...spec }),
-    run: async (spec) => { commands.push(spec.command); return { exitCode: 0 } },
-  }
-  const { subprocess } = recordSubprocess({}, 0)
-  const routes = build({ subprocess, shell, entries: { 'C:\\proj': { type: 'directory' } } })
-  const res = await post(routes, { path: 'C:\\proj' })
-  assert.equal(res.status, 200)
-  assert.equal(res.body.ok, true)
-  assert.match(commands[0], /Start-Process explorer\.exe/)
+test('linux: falls back to gio when xdg-open is not installed', async () => {
+  await withPlatform('linux', async () => {
+    const { subprocess, calls } = recordSubprocess({ gio: '/usr/bin/gio' }, 0)
+    const routes = build({ subprocess, entries: { '/srv/proj': { type: 'directory' } } })
+    const res = await post(routes, { path: '/srv/proj' })
+    assert.equal(res.body.ok, true)
+    assert.deepEqual(calls[0].argv, ['/usr/bin/gio', 'open', '/srv/proj'])
+  })
+})
+
+test('linux: reports every candidate it tried when none is installed', async () => {
+  await withPlatform('linux', async () => {
+    const { subprocess } = recordSubprocess({}, 0)
+    const routes = build({ subprocess, entries: { '/srv/proj': { type: 'directory' } } })
+    const res = await post(routes, { path: '/srv/proj' })
+    assert.equal(res.status, 200)
+    assert.equal(res.body.ok, false)
+    assert.match(res.body.error, /No file manager found/)
+    assert.match(res.body.error, /xdg-open/)
+    assert.match(res.body.error, /gio/)
+  })
 })
 
 test('darwin: opens a directory with open', async () => {
@@ -188,8 +197,11 @@ test('reports 500 when launching throws', async () => {
     subprocess.spawn = () => { throw new Error('boom') }
     const routes = build({ subprocess, entries: { 'C:\\proj': { type: 'directory' } } })
     const res = await post(routes, { path: 'C:\\proj' })
-    assert.equal(res.status, 500)
+    // A failing spawn now moves on to the next candidate and finally reports a
+    // soft failure naming what was tried, instead of a bare 500.
+    assert.equal(res.status, 200)
     assert.equal(res.body.ok, false)
+    assert.match(res.body.error, /explorer/)
   })
 })
 

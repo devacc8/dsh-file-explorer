@@ -25,6 +25,7 @@
  *
  * @module dsh-file-explorer
  */
+import { readFileSync } from 'node:fs'
 import { lstat, realpath } from 'node:fs/promises'
 import { dirname, resolve as resolvePath, sep } from 'node:path'
 export const name = 'file-explorer'
@@ -66,6 +67,32 @@ export function apply(ctx) {
   }
 
   // ---------- local hardening helpers ----------
+
+  // WSL runs a real Linux userland, but the desktop the user actually sees is
+  // Windows, so the Windows shell is the best file manager there. `xdg-utils` is
+  // optional on Linux and often missing, which is why the route tries a list of
+  // openers instead of assuming xdg-open exists.
+  let wsl: boolean | null = null
+  const isWsl = () => {
+    if (wsl === null) {
+      if (process.platform !== 'linux') wsl = false
+      else if (process.env.WSL_DISTRO_NAME) wsl = true
+      else {
+        try {
+          wsl = /microsoft/i.test(readFileSync('/proc/version', 'utf8'))
+        } catch {
+          wsl = false
+        }
+      }
+    }
+    return wsl
+  }
+  const wslWindowsPath = (value: string) => {
+    const drive = /^\/mnt\/([a-zA-Z])\/(.*)$/.exec(value)
+    if (drive) return drive[1].toUpperCase() + ':\\' + drive[2].replace(/\//g, '\\')
+    const distro = process.env.WSL_DISTRO_NAME || 'wsl'
+    return '\\\\wsl$\\' + distro + value.replace(/\//g, '\\')
+  }
 
   /** Reject control characters everywhere; shell metacharacters on Windows. */
   const unsafePath = (value) => {
@@ -431,36 +458,57 @@ export function apply(ctx) {
         // parent and highlights the file), `open -R` on macOS, and the
         // parent directory on Linux (xdg-open has no portable reveal).
         const plan = () => {
-          if (platform === 'win32') return { program: 'explorer', args: isDir ? [display] : ['/select,' + display] }
-          if (platform === 'darwin') return { program: 'open', args: isDir ? [display] : ['-R', display] }
-          return { program: 'xdg-open', args: [parent] }
+          if (platform === 'win32') {
+            return [{ program: 'explorer', args: isDir ? [display] : ['/select,' + display], detached: true }]
+          }
+          if (platform === 'darwin') return [{ program: 'open', args: isDir ? [display] : ['-R', display] }]
+          const list = []
+          // Windows Explorer selects the file when handed a file path, which is
+          // the closest thing to "reveal" available here.
+          if (isWsl()) list.push({ program: 'explorer.exe', args: [wslWindowsPath(display)], detached: true })
+          list.push(
+            { program: 'xdg-open', args: [parent] },
+            { program: 'gio', args: ['open', parent] },
+            { program: 'exo-open', args: ['--launch', 'FileManager', parent] },
+            { program: 'kde-open5', args: [parent] },
+            { program: 'kde-open', args: [parent] },
+            { program: 'nautilus', args: [parent] },
+            { program: 'dolphin', args: [parent] },
+            { program: 'thunar', args: [parent] },
+            { program: 'pcmanfm', args: [parent] },
+            { program: 'nemo', args: [parent] },
+            { program: 'caja', args: [parent] },
+          )
+          return list
         }
-        const { program, args } = plan()
-        let resolved = null
-        try { resolved = await subprocess.resolveExecutable(program) } catch { /* not on PATH */ }
-        if (resolved === null || resolved === undefined) {
-          send(res, 200, {
-            ok: false,
-            error: platform === 'win32' ? 'Could not launch Explorer (explorer is unavailable)'
-              : platform === 'darwin' ? 'Could not launch Finder (the "open" command was not found)'
-                : 'Could not open the file manager (xdg-open not found)',
-          })
-          return
+        const tried = []
+        for (const candidate of plan()) {
+          let resolved = null
+          try { resolved = await subprocess.resolveExecutable(candidate.program) } catch { /* not on PATH */ }
+          if (resolved === null || resolved === undefined) { tried.push(candidate.program); continue }
+          try {
+            const handle = subprocess.spawn({
+              argv: [String(resolved), ...candidate.args],
+              cwd: parent,
+              stdio: { stdin: 'ignore', stdout: { maxBytes: 4096 }, stderr: { maxBytes: 4096 } },
+              graceMs: 8000,
+            })
+            const outcome = await handle.done
+            // The Windows shell detaches and commonly exits non-zero even after
+            // opening the window, so there a successful spawn is success.
+            if (candidate.detached || outcome.exitCode === 0) {
+              send(res, 200, { ok: true, program: candidate.program })
+              return
+            }
+          } catch {
+            /* try the next candidate */
+          }
+          tried.push(candidate.program)
         }
-        const handle = subprocess.spawn({
-          argv: [String(resolved), ...args],
-          cwd: parent,
-          stdio: { stdin: 'ignore', stdout: { maxBytes: 4096 }, stderr: { maxBytes: 4096 } },
-          graceMs: 8000,
+        send(res, 200, {
+          ok: false,
+          error: 'No file manager found. Tried: ' + tried.join(', '),
         })
-        const outcome = await handle.done
-        // explorer.exe detaches and commonly exits with code 1 even after
-        // opening the window, so on Windows a successful spawn is success.
-        if (platform === 'win32' || outcome.exitCode === 0) {
-          send(res, 200, { ok: true })
-        } else {
-          send(res, 200, { ok: false, error: 'Open failed (exit code ' + outcome.exitCode + ')' })
-        }
       } catch (err) {
         send(res, err?.status ?? 500, { ok: false, error: message(err) })
       }
