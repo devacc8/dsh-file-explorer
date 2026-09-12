@@ -385,6 +385,25 @@ body[data-ds-dark-theme] .fe-overlay-root {
 		// folder; now each workspace keeps its own.
 		const treeMemory = new Map();
 		const treeScroll = new Map();
+		// Offset still waiting to be applied after a workspace switch. Levels are
+		// fetched lazily, so the saved offset may not be reachable at the first
+		// paint: it is retried on every tree change until it sticks, and gives up
+		// after a short window (the tree may simply be shorter now). While it is
+		// pending, scroll events must not overwrite the stored offset.
+		let pendingScroll = -1;
+		let pendingScrollTimer = 0;
+		const applyPendingScroll = () => {
+			if (pendingScroll < 0) return;
+			const el = document.querySelector('.fe-tree');
+			if (!el) return;
+			const max = el.scrollHeight - el.clientHeight;
+			if (max <= 0) return;
+			el.scrollTop = Math.min(pendingScroll, max);
+			if (el.scrollTop >= pendingScroll) {
+				pendingScroll = -1;
+				if (pendingScrollTimer) { clearTimeout(pendingScrollTimer); pendingScrollTimer = 0 }
+			}
+		};
 
 		// ---------- shared store (open/width/search/editor/status) ----------
 		const store = {
@@ -1179,14 +1198,16 @@ body[data-ds-dark-theme] .fe-overlay-root {
 			}, [tree]);
 			react.useEffect(() => {
 				if (!rootPath) return;
-				const offset = treeScroll.get(rootPath) || 0;
-				if (offset === 0) return;
-				const id = requestAnimationFrame(() => {
-					const el = document.querySelector('.fe-tree');
-					if (el) el.scrollTop = offset;
-				});
+				pendingScroll = treeScroll.get(rootPath) || 0;
+				if (pendingScroll > 0) {
+					if (pendingScrollTimer) clearTimeout(pendingScrollTimer);
+					pendingScrollTimer = setTimeout(() => { pendingScroll = -1; pendingScrollTimer = 0 }, 2000);
+				}
+				const id = requestAnimationFrame(applyPendingScroll);
 				return () => cancelAnimationFrame(id);
 			}, [rootPath]);
+			// Levels keep arriving after the switch, so retry as the tree grows.
+			react.useEffect(() => { applyPendingScroll(); }, [tree]);
 
 			// Native-style layout yield: while any right pane is visible, the
 			// conversation column ([data-phase=active]) gets right padding
@@ -1650,7 +1671,10 @@ body[data-ds-dark-theme] .fe-overlay-root {
 				status ? react.createElement('div', { className: 'fe-status ' + (status.ok ? 'fe-status-ok' : 'fe-status-err') }, status.text) : null,
 				react.createElement('div', {
 					className: 'fe-tree',
-					onScroll: (e) => { if (tree && tree.rootPath) treeScroll.set(tree.rootPath, e.currentTarget.scrollTop) },
+					onScroll: (e) => {
+						if (pendingScroll >= 0) return;
+						if (tree && tree.rootPath) treeScroll.set(tree.rootPath, e.currentTarget.scrollTop);
+					},
 				}, s.query.trim() ? renderSearch() : renderTree()),
 			) : null;
 			const previewPane = editor
