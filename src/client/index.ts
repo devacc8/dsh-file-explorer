@@ -379,6 +379,13 @@ body[data-ds-dark-theme] .fe-overlay-root {
 		let expandBusy = false;
 		const MAX_EXPAND_DIRS = 500;
 
+		// Per-workspace tree state (expanded folders, cached listings, selection)
+		// plus its scroll offset. Switching to another project's session used to
+		// rebuild the tree from the bare root, so coming back lost every open
+		// folder; now each workspace keeps its own.
+		const treeMemory = new Map();
+		const treeScroll = new Map();
+
 		// ---------- shared store (open/width/search/editor/status) ----------
 		const store = {
 			open: false,
@@ -1137,7 +1144,14 @@ body[data-ds-dark-theme] .fe-overlay-root {
 				store.rootPath = rootPath;
 				resetTransient();
 				let cancelled = false;
-				setTree({ rootPath, rootName, expanded: new Set([rootPath]), cache: new Map(), loading: new Set([rootPath]), selected: null, errors: {} });
+				const remembered = treeMemory.get(rootPath);
+				if (remembered) {
+					// Restore the open folders and cached listings; the root is
+					// re-listed below so top-level changes still show up.
+					setTree({ ...remembered, rootName, loading: withVal(new Set(remembered.loading || []), rootPath) });
+				} else {
+					setTree({ rootPath, rootName, expanded: new Set([rootPath]), cache: new Map(), loading: new Set([rootPath]), selected: null, errors: {} });
+				}
 				api.list(rootPath).then((res) => {
 					if (cancelled) return;
 					setTree((t) => {
@@ -1155,6 +1169,23 @@ body[data-ds-dark-theme] .fe-overlay-root {
 					});
 				});
 				return () => { cancelled = true };
+			}, [rootPath]);
+
+			// Remember the live tree for its workspace, and put the scroll offset
+			// back after a switch (the panel keeps its DOM node, but the tree
+			// collapses far enough for the browser to clamp the offset to 0).
+			react.useEffect(() => {
+				if (tree && tree.rootPath) treeMemory.set(tree.rootPath, tree);
+			}, [tree]);
+			react.useEffect(() => {
+				if (!rootPath) return;
+				const offset = treeScroll.get(rootPath) || 0;
+				if (offset === 0) return;
+				const id = requestAnimationFrame(() => {
+					const el = document.querySelector('.fe-tree');
+					if (el) el.scrollTop = offset;
+				});
+				return () => cancelAnimationFrame(id);
 			}, [rootPath]);
 
 			// Native-style layout yield: while any right pane is visible, the
@@ -1347,10 +1378,13 @@ body[data-ds-dark-theme] .fe-overlay-root {
 
 			const refresh = () => {
 				if (!tree || !tree.rootPath) return;
-				const root = tree.rootPath;
-				const name = tree.rootName;
-				setTree({ rootPath: root, rootName: name, expanded: new Set([root]), cache: new Map(), loading: new Set([root]), selected: null, errors: {} });
-				loadChildren(root);
+				const expanded = new Set(tree.expanded);
+				expanded.add(tree.rootPath);
+				// Re-read every folder that is currently open (capped) instead of
+				// collapsing the tree back to its root.
+				const dirs = Array.from(expanded).slice(0, 100);
+				setTree({ ...tree, expanded, cache: new Map(), loading: new Set(dirs), errors: {} });
+				for (const dir of dirs) loadChildren(dir);
 			};
 
 			const collectDirs = (t) => {
@@ -1614,7 +1648,10 @@ body[data-ds-dark-theme] .fe-overlay-root {
 					s.searching ? react.createElement('span', { className: 'fe-search-state' }, '…') : null,
 				),
 				status ? react.createElement('div', { className: 'fe-status ' + (status.ok ? 'fe-status-ok' : 'fe-status-err') }, status.text) : null,
-				react.createElement('div', { className: 'fe-tree' }, s.query.trim() ? renderSearch() : renderTree()),
+				react.createElement('div', {
+					className: 'fe-tree',
+					onScroll: (e) => { if (tree && tree.rootPath) treeScroll.set(tree.rootPath, e.currentTarget.scrollTop) },
+				}, s.query.trim() ? renderSearch() : renderTree()),
 			) : null;
 			const previewPane = editor
 				? react.createElement('div', {
