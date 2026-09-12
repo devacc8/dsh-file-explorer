@@ -110,9 +110,11 @@ rebuild needs the upstream `tsdown` toolchain (see "Build" below).
 
 ## Repository and upstream contribution
 
-Our canonical fork is private: **https://github.com/devacc8/dsh-file-explorer**
-(a fork of a public repository cannot be private, so this is a standalone repo;
-the local directory is pushed there as `origin`).
+Our canonical fork is public: **https://github.com/devacc8/dsh-file-explorer**
+(a fork of a public repository would inherit its visibility, so this is a
+standalone repo; the local directory is pushed there as `origin`). It is tagged
+`dsh-plugin`, which is how the Harness project asks community plugins to make
+themselves discoverable (see its CONTRIBUTING.md).
 
 Fixes that are not specific to our fork were contributed upstream from a separate
 public fork (`devacc8/dsh-file-explorer-contrib`):

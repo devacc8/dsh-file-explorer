@@ -4,7 +4,8 @@
 > Markdown rendering, syntax highlighting, in-panel editing, and one-click open in
 > VS Code or the system file manager.
 
-This repository is a **vendored, hardened fork**. Upstream is
+A community plugin for DeepSeek Harness (tagged `dsh-plugin`). This repository is a
+**vendored, hardened fork**. Upstream is
 [`joejojoking-cloud/dsh-file-explorer`](https://github.com/joejojoking-cloud/dsh-file-explorer);
 this fork is frozen (no upstream updates) and adds security fixes, a fully English
 UI, and a panel background that matches the Harness theme. See `FORK.md` for the

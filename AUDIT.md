@@ -3,6 +3,9 @@
 Security audit performed before adopting this plugin as our own and freezing it,
 then repeated adversarially. See `FORK.md` for provenance and the patch list.
 
+Upstream fixes were contributed as PR #7 and are described there in the same
+terms, so nothing below is news to the upstream author.
+
 ## Verdict
 
 - **Upstream 0.1.7: NOT safe to freeze as-is.** Two high-severity issues were found
