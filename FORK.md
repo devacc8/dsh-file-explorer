@@ -129,6 +129,21 @@ Deliberately **excluded** from those PRs: the English localization (already
 covered by the upstream bilingual PR #6), the panel theme match, and the pencil
 hint message — those are our fork's preferences.
 
+## Public listing and community posts
+
+The fork is public and tagged `dsh-plugin`, which is how the Harness project asks
+community plugins to make themselves discoverable. Two posts on the Harness
+Discussions board:
+
+| Post | What |
+|---|---|
+| [#6383](https://github.com/deepseek-ai/deepseek-harness/discussions/6383) | Ideas: four additions for the built-in right-sidebar file tree (type icons, filter box, current-file highlight, persisted expansion) |
+| [#6384](https://github.com/deepseek-ai/deepseek-harness/discussions/6384) | Show Your Plugins!: this plugin |
+
+The Harness repository does not accept external pull requests (its CONTRIBUTING.md
+says so explicitly), so Discussions is the only official feedback channel. The PRs
+to the upstream plugin repository (#7, #8, #9) remain the code path.
+
 ## Security audit
 
 See `AUDIT.md` for the full audit (capabilities, network sinks, process execution,
