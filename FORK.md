@@ -112,11 +112,11 @@ surface minimal (package export `./client` resolves to `lib/client.js`).
     whose workspace entry has not appeared yet still opens. Verified by switching
     between two projects in a live 0.1.6-alpha.2 instance: the tree follows both ways.
 
-`src/` and `lib/` carry the same patches. For the host half this is enforced
-mechanically: `tsc -p tsconfig.json` regenerates `lib/index.js` from `src/index.ts`
-and the output is byte-identical to the committed file (verified). The client half
-was hand-patched in `lib/client.js` and mirrored into `src/client/index.ts`; a
-rebuild needs the upstream `tsdown` toolchain (see "Build" below).
+`src/` and `lib/` carry the same patches. For both halves this is enforced
+mechanically now: `pnpm run build` regenerates `lib/` from `src/` (`tsc` for the host,
+`tsc -p tsconfig.client.json` and `tsdown` for the client bundle). The host output is
+byte-identical to the committed file; the client bundle is reformatted by the bundler,
+so a rebuild rewrites it wholesale even when the change behind it is one line.
 
 ## Repository and upstream contribution
 
@@ -178,11 +178,14 @@ stay in place while it is installed.
 pnpm install && pnpm run build   # clean && tsc && tsc -p tsconfig.client.json && tsdown
 ```
 
-Known caveat: a standalone `pnpm install` can fail resolving the declared
-`@deepseek-ai/dsh-client-*` peer dependencies, because their transitive
-`@deepseek-ai/dsh-compact` is not published to npm (404). The committed `lib/` is the
-build that is actually installed; hand patches were applied to `lib/` and mirrored
-into `src/`.
+The client peer ranges used to point at `^0.0.1-rc.1`, which resolves
+`@deepseek-ai/dsh-client-runtime@0.0.1-rc.*`; that version's own dependency
+`@deepseek-ai/dsh-compact` is not published to npm (404), so `pnpm install` died
+before `tsc` ran and the client half had to be hand-patched in `lib/client.js` and
+mirrored into `src/client/index.ts`. The ranges now point at published lines
+(`@deepseek-ai/dsh-client-runtime` `^0.1.1-rc.2`, the other client packages
+`^0.1.5-rc.2`, `@deepseek-ai/cordis` `^4.0.2`), so the install and the build work and
+`lib/` is a plain build of `src/`.
 
 ## Tests
 
@@ -190,8 +193,7 @@ into `src/`.
 node --test
 ```
 
-Expected on Linux: 8 pass, 1 fail, 3 skipped. The single failure
-("reports 500 when launching throws") is pre-existing and platform-specific: it
-assumes the Windows `explorer` branch, while on Linux the route resolves
-`xdg-open`, never spawns, and returns 200. Verified identical against the
-unmodified upstream `lib/index.js`.
+Expected on Linux: 39 pass, 2 skipped (win32-only). The one-time failure
+("reports 500 when launching throws") was platform-specific: it assumed the Windows
+`explorer` branch, while on Linux the route resolves `xdg-open`, never spawns, and
+returns 200.
