@@ -1108,15 +1108,18 @@ body[data-ds-dark-theme] .fe-overlay-root {
 			const editor = s.previewOpen ? activeTab : null;
 			const status = s.status;
 			const wsItems = props.useWorkspaces((st) => st.items);
-			// 0.1.6 dropped the single `current` session field and the recent-workspace
-			// id with it, so both of the selectors this used to read returned undefined
-			// and the tree fell through to the first workspace, which is what pinned it
-			// to whichever project was opened first. The session shown in the main view
-			// is the one that view retains, which is how the harness resolves it too.
+			// 0.1.6 dropped the single `current` session field, and `recentWorkspaceId`
+			// went with it, so both of the selectors this used to read returned undefined
+			// and the tree fell through to the first workspace, which pinned it to
+			// whichever project was opened first. On 0.1.6 the session shown in the main
+			// view is the one that view retains, which is how the harness resolves it too;
+			// older hosts still answer through `current`.
 			const currentSessionId = props.useSessions((st) =>
-				Object.values(st.byId).find((s: any) => ((s.retainedBy && s.retainedBy.mainView) || 0) > 0)?.id ?? null);
+				st.current
+				?? Object.values(st.byId ?? {}).find((s: any) => ((s.retainedBy && s.retainedBy.mainView) || 0) > 0)?.id
+				?? null);
 			const sessionCwd = props.useSessions((st) =>
-				currentSessionId === null ? null : st.byId[currentSessionId]?.cwd ?? null);
+				currentSessionId === null ? null : st.byId?.[currentSessionId]?.cwd ?? null);
 
 			let rootPath = null;
 			let rootName = '';
