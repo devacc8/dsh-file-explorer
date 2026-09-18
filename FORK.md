@@ -102,6 +102,16 @@ surface minimal (package export `./client` resolves to `lib/client.js`).
     `.fe-overlay-root`, overridden under `body[data-ds-dark-theme]`.
     Regression tests in `test/file-types.test.mjs`.
 
+12. **Project switching on Harness 0.1.6.** The tree resolved its root from
+    `sessions.current` and `workspaces.recentWorkspaceId`. Both fields are gone in
+    0.1.6 (sessions became per-view instances with their own store shape), so both
+    selectors returned undefined and the tree fell through to the first workspace,
+    which pinned it to whichever project was opened first. The current session is now
+    the one the main view retains (`retainedBy.mainView`), the same rule the Harness
+    uses internally, with the session's own `cwd` as the fallback root so a project
+    whose workspace entry has not appeared yet still opens. Verified by switching
+    between two projects in a live 0.1.6-alpha.2 instance: the tree follows both ways.
+
 `src/` and `lib/` carry the same patches. For the host half this is enforced
 mechanically: `tsc -p tsconfig.json` regenerates `lib/index.js` from `src/index.ts`
 and the output is byte-identical to the committed file (verified). The client half

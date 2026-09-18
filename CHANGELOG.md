@@ -18,6 +18,11 @@ this fork's changes.
 - **UI:** fully English; the edit button is dimmed and disabled when there is
   nothing to edit; the panel background matches the Harness theme in both light and
   dark.
+- **Harness 0.1.6 compatibility:** the store fields the tree followed
+  (`sessions.current`, `workspaces.recentWorkspaceId`) no longer exist, so the panel
+  stayed on the first workspace it had ever resolved. It now follows the session the
+  main view retains, with that session's `cwd` as the fallback root, and switching
+  projects works again.
 - **Tests:** coverage for confinement, CSRF, the header gate and the inline
   renderer. The suite is green (21 pass, 3 win32-only skips).
 
